@@ -4,10 +4,10 @@ import json
 import time
 
 # MQTT Broker details
-BROKER = "garden"
+BROKER = "192.168.1.10"
 PORT = 1883
-DATATOPIC = "data/gardendata"
-CONTROL_TOPIC = "control/motor"
+DATATOPIC = "gardendata"
+CONTROLTOPIC = "motor"
 
 # DHT22 Sensor setup
 DHT_SENSOR = Adafruit_DHT.DHT22
@@ -38,7 +38,7 @@ try:
 
             # Check temperature and send control message to Pi3 if needed
             if temperature > 35:
-                client.publish(CONTROL_TOPIC, json.dumps({"action": "activate"}))
+                client.publish(CONTROLTOPIC, json.dumps({"action": "activate"}))
                 print("Motor activation message sent")
                 # send whatsapp message through twillo api
 

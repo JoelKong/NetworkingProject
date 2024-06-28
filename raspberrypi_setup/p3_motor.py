@@ -2,14 +2,14 @@ import paho.mqtt.client as mqtt
 import json
 
 # MQTT Broker details
-BROKER = "garden"
+BROKER = "192.168.1.10"
 PORT = 1883
-CONTROL_TOPIC = "control/motor"
+CONTROLTOPIC = "motor"
 
 # Callback when the client receives a CONNACK response from the server
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
-    client.subscribe(CONTROL_TOPIC)
+    client.subscribe(CONTROLTOPIC)
 
 # Callback when a PUBLISH message is received from the server
 def on_message(client, userdata, msg):
