@@ -4,9 +4,9 @@ import json
 import requests
 
 # MQTT Broker details
-BROKER = "garden"
+BROKER = "192.168.1.10"
 PORT = 1883
-DATA_TOPIC = "data/gardendata"
+DATA_TOPIC = "gardendata"
 
 # Flask server URL
 FLASK_SERVER_URL = "http://<FLASK_SERVER_IP>:5000/update"
