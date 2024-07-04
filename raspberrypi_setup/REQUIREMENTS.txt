@@ -2,7 +2,15 @@ Enable Virtual Environment :
 python3 -m venv env
 source env/bin/activate
 
+libraries required for p2(data.py)
 python3 -m pip install adafruit-circuitpython-dht
 sudo apt-get install libgpiod2
-pip install opencv-python-headless
 pip install gpiozero
+pip install picamera
+
+In order to use camera :
+Enable IC2 and Camera under Raspi-config
+
+If using camera: 
+Use Buster OS by selecting custom in imager and uploading .img file
+download link: https://downloads.raspberrypi.org/raspios_armhf/images/raspios_armhf-2021-05-28/
