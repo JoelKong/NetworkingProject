@@ -1,58 +1,81 @@
 import paho.mqtt.client as mqtt
 import time
 import json
-import requests
+from flask import Flask, request, jsonify
+import threading
 
 # MQTT Broker details
 BROKER = "192.168.1.10"
 PORT = 1883
-DATA_TOPIC = "gardendata"
+DATA_TOPIC = "data/gardendata"
 
-# Flask server URL
-FLASK_SERVER_URL = "http://<FLASK_SERVER_IP>:5000/update"
-
-# Variables to store sensor data
+# Default sensor data
 sensor_data = {
     "temperature": 0,
-    "humidity": 0
+    "humidity": 0,
+    "distance1": 0,
+    "distance2": 0,
+    "image": None,
 }
 
-# Callback when the client receives a CONNACK response from the server
+# Subscribe to data topic
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
     client.subscribe(DATA_TOPIC)
 
-# Callback when a PUBLISH message is received from the server
+# Getting data from the topic (decoding)
 def on_message(client, userdata, msg):
     global sensor_data
     data = json.loads(msg.payload.decode())
     sensor_data["temperature"] = data.get("temperature", 0)
     sensor_data["humidity"] = data.get("humidity", 0)
+    sensor_data["distance1"] = data.get("distance1", 0)
+    sensor_data["distance2"] = data.get("distance2", 0)
+    sensor_data["image"] = data.get("image", None)
     print(f"Received message: {sensor_data}")
 
+# Run MQTT on loop
+def run_mqtt_client():
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
 
-# Send data to Flask server
-def send_data_to_frontend():
+    client.connect(BROKER, PORT, 60)
+
+    # Start the loop to process received messages
+    client.loop_start()
+
     try:
-        response = requests.post(FLASK_SERVER_URL, json=sensor_data)
-        print(f"Data sent to frontend: {sensor_data}, Response: {response.status_code}")
-    except Exception as e:
-        print(f"Failed to send data to frontend: {e}")
+        while True:
+            time.sleep(10)
+    except KeyboardInterrupt:
+        print("Exiting...")
+        client.loop_stop()
+        client.disconnect()
 
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
+# Flask server setup
+app = Flask(__name__)
 
-client.connect(BROKER, PORT, 60)
+@app.route('/data', methods=['POST'])
+def receive_data():
+    global sensor_data
+    sensor_data = request.json
+    print(f"Data received via POST: {sensor_data}")
+    return jsonify({"status": "success"}), 200
 
-# Start the loop to process received messages
-client.loop_start()
+@app.route('/data', methods=['GET'])
+def get_data():
+    return jsonify(sensor_data), 200
 
-try:
-    while True:
-        send_data_to_frontend()
-        time.sleep(10)
-except KeyboardInterrupt:
-    print("Exiting...")
-    client.loop_stop()
-    client.disconnect()
+def run_flask_server():
+    app.run(host='0.0.0.0', port=5000)
+
+# Run both MQTT client and Flask server in separate threads
+mqtt_thread = threading.Thread(target=run_mqtt_client)
+flask_thread = threading.Thread(target=run_flask_server)
+
+mqtt_thread.start()
+flask_thread.start()
+
+mqtt_thread.join()
+flask_thread.join()
