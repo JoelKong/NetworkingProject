@@ -9,6 +9,7 @@ import threading
 BROKER = "192.168.1.10"
 PORT = 1883
 DATA_TOPIC = "data/gardendata"
+CONTROL_TOPIC = "control/motor"
 
 # Default sensor data
 sensor_data = {
@@ -22,6 +23,9 @@ sensor_data = {
 # Twilio credentials
 account_sid = 'ACd7753f4a20bf86cac3d1cdab433204db'
 auth_token = '282e1fe649e60eed5a0e8590fc03f937'
+
+# Global MQTT client
+mqtt_client = mqtt.Client()
 
 # Subscribe to data topic
 def on_connect(client, userdata, flags, rc):
@@ -41,33 +45,33 @@ def on_message(client, userdata, msg):
 
 # Run MQTT on loop
 def run_mqtt_client():
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
+    global mqtt_client
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_message = on_message
 
-    client.connect(BROKER, PORT, 60)
+    mqtt_client.connect(BROKER, PORT, 60)
 
     # Start the loop to process received messages
-    client.loop_start()
+    mqtt_client.loop_start()
 
     try:
         while True:
             time.sleep(10)
     except KeyboardInterrupt:
         print("Exiting...")
-        client.loop_stop()
-        client.disconnect()
+        mqtt_client.loop_stop()
+        mqtt_client.disconnect()
 
 # Flask server setup
 app = Flask(__name__)
 
 def whatsapp_alerts(to_num, msg):
-   client = Client(account_sid, auth_token)
-   client.messages.create(
-       body=msg,
-       from_='whatsapp:+14155238886',
-       to='whatsapp:+65' + str(to_num)
-   )
+    twilio_client = Client(account_sid, auth_token)
+    twilio_client.messages.create(
+        body=msg,
+        from_='whatsapp:+14155238886',
+        to='whatsapp:+65' + str(to_num)
+    )
 
 @app.route('/data', methods=['POST'])
 def receive_data():
@@ -81,9 +85,11 @@ def receive_data():
     
     return jsonify(sensor_data), 200
 
-@app.route('/data', methods=['GET'])
-def get_data():
-    return jsonify(sensor_data), 200
+@app.route('/activate', methods=['PUT'])
+def activate_motor():
+    global mqtt_client
+    mqtt_client.publish(CONTROL_TOPIC, json.dumps({"action": "activate"}))
+    return jsonify({"status": "Motor activation signal sent"}), 200
 
 def run_flask_server():
     app.run(host='0.0.0.0', port=5000)
