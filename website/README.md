@@ -1,38 +1,53 @@
-# create-svelte
+# Watering Can Frontend
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+Frontend site for the watering can project for INF1006 - Computer Networks.
 
-## Creating a project
+## Building/running
 
-If you're seeing this, you've probably already done this step. Congrats!
+### Pre-requisites
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+It is recommended to use [pnpm](https://pnpm.io/) for Node.js package management.
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+Follow the [instructions to install pnpm on their website](https://pnpm.io/installation).
 
-## Developing
+---
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### Steps
 
-```bash
-npm run dev
+1. Clone the project locally
+2. Start the backend server
+3. Install the dependencies with `pnpm i`
+4. Uncomment or add the following lines to the [Vite config](./vite.config.ts):
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+    ```ts
+    export default defineConfig({
+      // ...[Other config]...
+      server: {
+        proxy: {
+          '/api': {
+            target: 'http://192.168.1.10:5000',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api/, '')
+          }
+        }
+      }
+    })
+    ```
 
-## Building
+    This adds a proxy to the `/api` route that the code uses such that it correctly
+    calls the backend endpoints.
+5. Run the application with `pnpm dev`.
 
-To create a production version of your app:
+    Alternatively, the app can be built with `pnpm build`, where
+    the resulting built app will be outputted to the dist/ folder. This will then
+    require a local development server such as the `http.server` Python 3 module
+    if not uploaded to an existing web server.
 
-```bash
-npm run build
-```
+## Project structure
 
-You can preview the production build with `npm run preview`.
+This project uses a [standard](https://kit.svelte.dev/docs/project-structure)
+[SvelteKit](https://kit.svelte.dev) setup.
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+New client/server-side routes are to be added in the `src/routes` folder, and
+the logic is to be added in the `src/lib` folder, where it can then be imported
+via [`$lib`](https://kit.svelte.dev/docs/modules#$lib).
