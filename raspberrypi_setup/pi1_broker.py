@@ -3,7 +3,6 @@ import time
 import json
 from flask import Flask, request, jsonify
 import threading
-import subprocess
 
 # MQTT Broker details
 BROKER = "192.168.1.10"
@@ -64,9 +63,7 @@ app = Flask(__name__)
 @app.route('/data', methods=['POST'])
 def receive_data():
     global sensor_data
-    data = request.json
-    phone_numbers = data.get('phone_numbers', [])
-    
+    data = request.json    
     return jsonify(sensor_data), 200
 
 @app.route('/activate', methods=['PUT'])
@@ -75,11 +72,6 @@ def activate_motor():
     mqtt_client.publish(CONTROL_TOPIC, json.dumps({"action": "activate"}))
     return jsonify({"status": "Motor activation signal sent"}), 200
 
-
-@app.route('/camera', methods=['PUT'])
-def activate_camera():
-    subprocess.run(['libcamera-jpeg', '-o', 'test.jpg'])
-    return jsonify({"status": "Camera activated and image captured"}), 200
 
 def run_flask_server():
     app.run(host='0.0.0.0', port=5000)
