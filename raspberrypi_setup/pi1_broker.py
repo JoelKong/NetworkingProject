@@ -2,7 +2,6 @@ import paho.mqtt.client as mqtt
 import time
 import json
 from flask import Flask, request, jsonify
-from twilio.rest import Client
 import threading
 import subprocess
 
@@ -20,10 +19,6 @@ sensor_data = {
     "distance2": 0,
     "image": None,
 }
-
-# Twilio credentials
-account_sid = 'ACd7753f4a20bf86cac3d1cdab433204db'
-auth_token = '282e1fe649e60eed5a0e8590fc03f937'
 
 # Global MQTT client
 mqtt_client = mqtt.Client()
@@ -66,23 +61,11 @@ def run_mqtt_client():
 # Flask server setup
 app = Flask(__name__)
 
-def whatsapp_alerts(to_num, msg):
-    twilio_client = Client(account_sid, auth_token)
-    twilio_client.messages.create(
-        body=msg,
-        from_='whatsapp:+14155238886',
-        to='whatsapp:+65' + str(to_num)
-    )
-
 @app.route('/data', methods=['POST'])
 def receive_data():
     global sensor_data
     data = request.json
     phone_numbers = data.get('phone_numbers', [])
-
-    if phone_numbers:
-        for number in phone_numbers:
-            whatsapp_alerts(number, "Motor activation has occurred.")
     
     return jsonify(sensor_data), 200
 

@@ -4,6 +4,7 @@ import adafruit_dht
 import board
 import RPi.GPIO as GPIO
 import paho.mqtt.client as mqtt
+import base64
 
 # MQTT Broker details
 BROKER = "192.168.1.10"
@@ -20,7 +21,6 @@ DHT_SENSOR = adafruit_dht.DHT22(board.D4)
 PIN_TRIGGER1 = 7
 PIN_ECHO1 = 11
 
-GPIO.setmode(GPIO.BOARD)
 GPIO.setup(PIN_TRIGGER1, GPIO.OUT)
 GPIO.setup(PIN_ECHO1, GPIO.IN)
 
@@ -53,6 +53,17 @@ def get_distance(trigger_pin, echo_pin):
     distance = round(pulse_duration * 17150, 2)
     return distance
 
+def capture_image():
+    # Define the image path
+    image_path = 'test.jpg'
+    
+    
+    # Read the image file and encode it to base64
+    with open(image_path, 'rb') as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+    
+    return encoded_image
+
 try:
     while True:
         try:
@@ -68,7 +79,7 @@ try:
         distance1 = get_distance(PIN_TRIGGER1, PIN_ECHO1)
         print("Distance from sensor 1:", distance1, "cm")
 
-        if distance1 < 30:
+        if distance1 < 5:
             print("Water Level Exceeded")
             client.publish(CONTROL_TOPIC, json.dumps({"action": "deactivate"}))
 
@@ -76,21 +87,22 @@ try:
             "temperature": temperature,
             "humidity": humidity,
             "distance1": distance1,
-            "image": None,  # No image
+            "image": capture_image(),  # Call function to retrieve image
         }
 
         client.publish(DATATOPIC, json.dumps(sensor_data))
         print(f"Published data: {sensor_data}")
 
-        if humidity > 80 and distance1 > 30:
+        if humidity > 60 and distance1 > 5:
             client.publish(CONTROL_TOPIC, json.dumps({"action": "activate"}))
             print("Motor activation message sent")
-            # send WhatsApp message through Twilio API
 
-        time.sleep(10)
+        time.sleep(10) 
 
 except KeyboardInterrupt:
     print("Exiting...")
     client.loop_stop()
     client.disconnect()
     GPIO.cleanup()
+
+
