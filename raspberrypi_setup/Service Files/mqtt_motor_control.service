@@ -1,0 +1,14 @@
+[Unit]
+Description=MQTT Motor Control Service
+After=network.target
+
+[Service]
+ExecStart=/home/networking/env/bin/python /home/networking/pi3_motor.py
+WorkingDirectory=/home/networking/
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=networking
+
+[Install]
+WantedBy=multi-user.target
